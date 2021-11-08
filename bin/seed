@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+set -eou pipefail
+
+./bin/keyhole --seed --total 100000 --file ./seed/favorites.json --collection favorites mongodb://localhost:27017/keyhole

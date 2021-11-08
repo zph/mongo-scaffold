@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+set -eou pipefail
+set -x
+
+pip install -r requirements.txt
+brew bundle
+
+if [[ ! -d ./data ]];then
+  mlaunch --replicaset --nodes 3 --sharded 3
+fi
+
+./bin/init-db
+./bin/install-keyhole

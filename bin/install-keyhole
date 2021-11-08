@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+set -eou pipefail
+set -x
+
+CURRENT_DIR="$(pwd)"
+WORKSPACE=$(mktemp -d)
+trap "rm -rf $WORKSPACE" EXIT
+(
+  cd "$WORKSPACE"
+  git clone --depth 1 https://github.com/simagix/keyhole.git
+  cd keyhole
+  go mod download
+  go build main/keyhole.go
+  chmod +x ./keyhole
+  mv ./keyhole "$CURRENT_DIR/bin"
+)

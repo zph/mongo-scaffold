@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+mongo keyhole ./bin/init-db.js
+
+mongo keyhole ./bin/post-init-hook.js
