@@ -3,12 +3,13 @@
 set -eou pipefail
 set -x
 
+readonly mongodb="$(m 3.4.9)"
+
+# Install mlaunch
 pip install -r requirements.txt
-brew bundle
 
 if [[ ! -d ./data ]];then
   mlaunch --replicaset --nodes 3 --sharded 3
 fi
 
 ./bin/init-db
-./bin/install-keyhole
