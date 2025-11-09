@@ -5,8 +5,8 @@ set -x
 
 readonly mongodb="$(m 3.6)"
 
-# Install mlaunch
-pipx install mtools[mlaunch]
+# Install mlaunch using uv tool with Python 3.10
+uv tool install --python 3.10 mtools[mlaunch]==1.7.0 --with pymongo==3.13.0 --with python-dateutil
 
 if [[ ! -d ./data ]];then
   mlaunch init --replicaset --nodes 3 --sharded 3 --config 1 --mongos 1 --auth --username admin --password admin
