@@ -3,13 +3,13 @@
 set -eou pipefail
 set -x
 
-readonly mongodb="$(m 3.4.9)"
+readonly mongodb="$(m 3.6)"
 
 # Install mlaunch
-pip install -r requirements.txt
+pipx install mtools[mlaunch]
 
 if [[ ! -d ./data ]];then
-  mlaunch --replicaset --nodes 3 --sharded 3
+  mlaunch init --replicaset --nodes 3 --sharded 3 --config 1 --mongos 1 --auth --username admin --password admin
 fi
 
 ./bin/init-db

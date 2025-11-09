@@ -1,2 +1,3 @@
 mtools[mlaunch]==1.7.0
+python-dateutil
 pymongo==3.13.0
