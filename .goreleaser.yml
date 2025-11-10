@@ -64,14 +64,33 @@ builds:
       - -X main.date={{.Date}}
 
 # Archive configuration
+# Create separate archives for each build to support homebrew_casks
+# Note: builds field is deprecated but still functional - needed to specify which builds go into each archive
 archives:
-  - id: default
-    name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}"
+  - id: m
+    builds:
+      - m
+    name_template: "{{ .ProjectName }}_{{ .Binary }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}"
     files:
       - README.md
       - LICENSE*
       - CHANGELOG*
-    # builds field is deprecated - archives now include all builds by default
+  - id: mlaunch
+    builds:
+      - mlaunch
+    name_template: "{{ .ProjectName }}_{{ .Binary }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}"
+    files:
+      - README.md
+      - LICENSE*
+      - CHANGELOG*
+  - id: mongo-cluster
+    builds:
+      - mongo-cluster
+    name_template: "{{ .ProjectName }}_{{ .Binary }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}"
+    files:
+      - README.md
+      - LICENSE*
+      - CHANGELOG*
 
 # Checksums
 checksum:
