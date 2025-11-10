@@ -1,0 +1,168 @@
+# Goreleaser configuration for mongo-scaffold
+# Builds and releases m and mlaunch binaries
+
+project_name: mongo-scaffold
+
+version: 2
+# Build configuration
+builds:
+  - id: m
+    main: ./cmd/m
+    binary: m
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+
+  - id: mlaunch
+    main: ./cmd/mlaunch
+    binary: mlaunch
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+
+  - id: mongo-cluster
+    main: ./cmd/mongo-cluster
+    binary: mongo-cluster
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+
+# Archive configuration
+archives:
+  - id: default
+    name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}"
+    files:
+      - README.md
+      - LICENSE*
+      - CHANGELOG*
+    builds:
+      - m
+      - mlaunch
+      - mongo-cluster
+
+# Checksums
+checksum:
+  name_template: "{{ .ProjectName }}_{{ .Version }}_checksums.txt"
+  algorithm: sha256
+
+# Snapshots
+# Note: snapshot.name_template is deprecated in GoReleaser 2.5.0
+# Removed to avoid deprecation warnings
+snapshot: {}
+
+# Changelog
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+
+# Homebrew configuration
+# Note: GoReleaser 2.5.0 uses 'brews' field for Homebrew formulas
+brews:
+  - name: mongo-scaffold
+    homepage: "https://github.com/zph/mongo-scaffold"
+    description: "MongoDB version manager and cluster launcher"
+    license: "MIT"
+    # Install all binaries manually since 'binaries' field is not supported in 2.5.0
+    install: |
+      bin.install "m"
+      bin.install "mlaunch"
+      bin.install "mongo-cluster"
+    test: |
+      system "#{bin}/m", "--version"
+      system "#{bin}/mlaunch", "--help"
+      system "#{bin}/mongo-cluster", "--help"
+
+# GitHub release configuration
+release:
+  github:
+    owner: zph
+    name: mongo-scaffold
+  # Draft releases
+  draft: false
+  # Prerelease for tags with -alpha, -beta, -rc
+  mode: replace
+  header: |
+    ## {{ .Tag }}
+
+    {{ if .PreviousTag }}
+    **Full Changelog**: https://github.com/zph/mongo-scaffold/compare/{{ .PreviousTag }}...{{ .Tag }}
+    {{ end }}
+
+# Docker (optional - can be removed if not needed)
+# dockers:
+#   - goos: linux
+#     goarch: amd64
+#     image_templates:
+#       - "ghcr.io/zph/mongo-scaffold:{{ .Tag }}"
+#       - "ghcr.io/zph/mongo-scaffold:latest"
+#     dockerfile: Dockerfile
+
+# NFPM (for .deb and .rpm packages - optional)
+# nfpms:
+#   - id: default
+#     package_name: mongo-scaffold
+#     file_name_template: "{{ .ConventionalFileName }}"
+#     maintainer: "zph <zph@example.com>"
+#     description: "MongoDB version manager and cluster launcher"
+#     license: "MIT"
+#     formats:
+#       - deb
+#       - rpm
+#     dependencies:
+#       - mongodb-community
+#     contents:
+#       - src: "{{ .ArtifactPath }}"
+#         dst: "/usr/local/bin/{{ .Binary }}"
+#         file_info:
+#           mode: 0755
+
+# Before hook (optional)
+# before:
+#   hooks:
+#     - go mod download
+#     - go generate ./...
+
+# After hook (optional)
+# after:
+#   hooks:
+#     - echo "Release {{ .Tag }} completed!"
+

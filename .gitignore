@@ -1,3 +1,19 @@
 Brewfile.lock.json
 data/
+
+# Binaries
+bin/m
+bin/mlaunch
+bin/mongo-cluster
+bin/*.exe
+bin/*.dll
+bin/*.so
+bin/*.dylib
+
+# Legacy binary (if exists)
 ./bin/keyhole
+
+mongo-cluster
+mlaunch
+m
+cluster.json
