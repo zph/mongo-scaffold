@@ -39,6 +39,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Generate Casks README
+        run: ./scripts/generate-casks-readme.sh
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         if: failure()

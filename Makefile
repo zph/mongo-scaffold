@@ -78,6 +78,7 @@ release: ## Commit VERSION file, create git tag, confirm, and push
 
 test-release: ## Test GoReleaser locally (snapshot build)
 	@goreleaser release --snapshot --clean
+	@./scripts/generate-casks-readme.sh
 
 install-local: ## Install Homebrew formula from local dist directory (creates local tap)
 	@if [ ! -f dist/homebrew/mongo-scaffold.rb ]; then \
