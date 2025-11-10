@@ -19,18 +19,17 @@ build-mlaunch: ## Build mlaunch binary (MongoDB cluster launcher)
 build-mongo-cluster: ## Build mongo-cluster binary
 	@go build -o bin/mongo-cluster ./cmd/mongo-cluster
 
-clean: ## Clean data directory and stop running clusters
-	@bin/mlaunch stop --dir ./data 2>/dev/null || true
-	@rm -rf ./data
+clean: build
+	@bin/mlaunch reset --yes
 
-start: ## Start MongoDB cluster
-	@bin/mlaunch start
+start: build
+	@bin/mongo-cluster start
 
 stop: ## Stop MongoDB cluster
-	@bin/mlaunch stop --dir ./data
+	@bin/mongo-cluster stop --file cluster.json
 
 setup: ## Run setup script
-	@./bin/setup
+	@./bin/mongo-cluster start
 
 seed: ## Run seed script
 	@./bin/seed
