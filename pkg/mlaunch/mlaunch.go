@@ -15,14 +15,31 @@ type Config struct {
 	ReplicaNodes  int
 	ConfigServers int
 	MongosCount   int
-	BasePort      int
+	BasePort      int    // Starting port (deprecated: use PortRange)
+	PortRange     string // Port range in format "start-end" or "start:end" (e.g., "27017-28000")
+	PortMin       int    // Minimum port (used if PortRange is not set)
+	PortMax       int    // Maximum port (used if PortRange is not set, 0 = no limit)
 	Auth          bool
 	Username      string
 	Password      string
 	BinPath       string // Path to MongoDB binaries
+	MongoVersion  string // MongoDB version (e.g., "3.6", "4.0", "4.4", "5.0")
 }
 
-// Launcher handles mlaunch operations
+// LauncherInterface defines the interface for MongoDB cluster launchers
+type LauncherInterface interface {
+	Init() error
+	Start() error
+	Stop() error
+	Kill() error
+	KillAll() error
+	Reset() error
+	List() (string, error)
+	GetMongosHosts() []string
+	GetConnectionString() string
+}
+
+// Launcher handles mlaunch operations (Python wrapper - kept for backward compatibility)
 type Launcher struct {
 	mlaunchPath string
 	config      Config
@@ -116,6 +133,19 @@ func (l *Launcher) Stop() error {
 
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed to stop cluster: %w", err)
+	}
+
+	return nil
+}
+
+// Start starts the MongoDB cluster from saved metadata
+func (l *Launcher) Start() error {
+	cmd := exec.Command(l.mlaunchPath, "start", "--dir", l.config.DataDir)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed to start cluster: %w", err)
 	}
 
 	return nil

@@ -1,16 +1,14 @@
-package examples
+package cluster
 
 import (
 	"log"
 	"testing"
-
-	"github.com/zph/mongo-scaffold/pkg/cluster"
 )
 
 // TestBasicCluster demonstrates basic cluster usage
 func TestBasicCluster(t *testing.T) {
 	// Create a minimal sharded cluster
-	config := cluster.Config{
+	config := Config{
 		MongoVersion:  "3.6",
 		Shards:        2,
 		ReplicaNodes:  2,
@@ -19,7 +17,7 @@ func TestBasicCluster(t *testing.T) {
 		Auth:          false,
 	}
 
-	c, err := cluster.NewCluster(config)
+	c, err := NewCluster(config)
 	if err != nil {
 		t.Fatalf("Failed to create cluster: %v", err)
 	}
@@ -61,7 +59,7 @@ func TestBasicCluster(t *testing.T) {
 
 // TestClusterWithAuth demonstrates cluster with authentication
 func TestClusterWithAuth(t *testing.T) {
-	config := cluster.Config{
+	config := Config{
 		MongoVersion:  "3.6",
 		Shards:        1,
 		ReplicaNodes:  2,
@@ -72,7 +70,7 @@ func TestClusterWithAuth(t *testing.T) {
 		Password:      "testpass",
 	}
 
-	c, err := cluster.NewCluster(config)
+	c, err := NewCluster(config)
 	if err != nil {
 		t.Fatalf("Failed to create cluster: %v", err)
 	}
@@ -93,7 +91,7 @@ func TestParallelClusters(t *testing.T) {
 	t.Run("Cluster1", func(t *testing.T) {
 		t.Parallel()
 
-		config := cluster.Config{
+		config := Config{
 			MongoVersion:  "3.6",
 			Shards:        1,
 			ReplicaNodes:  1,
@@ -101,7 +99,7 @@ func TestParallelClusters(t *testing.T) {
 			MongosCount:   1,
 		}
 
-		c, err := cluster.NewCluster(config)
+		c, err := NewCluster(config)
 		if err != nil {
 			t.Fatalf("Failed to create cluster 1: %v", err)
 		}
@@ -117,7 +115,7 @@ func TestParallelClusters(t *testing.T) {
 	t.Run("Cluster2", func(t *testing.T) {
 		t.Parallel()
 
-		config := cluster.Config{
+		config := Config{
 			MongoVersion:  "3.6",
 			Shards:        1,
 			ReplicaNodes:  1,
@@ -125,7 +123,7 @@ func TestParallelClusters(t *testing.T) {
 			MongosCount:   1,
 		}
 
-		c, err := cluster.NewCluster(config)
+		c, err := NewCluster(config)
 		if err != nil {
 			t.Fatalf("Failed to create cluster 2: %v", err)
 		}

@@ -3,9 +3,11 @@
 set -eou pipefail
 set -x
 
+# Deprecated
 readonly mongodb="$(m 3.6)"
 
 # Install mlaunch using uv tool with Python 3.10
+# Deprecated in favor of golang native mlaunch
 uv tool install --python 3.10 mtools[mlaunch]==1.7.0 --with pymongo==3.13.0 --with python-dateutil
 
 if [[ ! -d ./data ]];then

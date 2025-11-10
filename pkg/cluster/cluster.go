@@ -1,13 +1,14 @@
 package cluster
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"time"
 
 	"github.com/zph/mongo-scaffold/pkg/healthcheck"
 	"github.com/zph/mongo-scaffold/pkg/mlaunch"
-	"github.com/zph/mongo-scaffold/pkg/mwrapper"
+	"github.com/zph/mongo-scaffold/pkg/mongo_version_manager"
 	"github.com/zph/mongo-scaffold/pkg/portmanager"
 	"github.com/zph/mongo-scaffold/pkg/tempdir"
 )
@@ -34,6 +35,8 @@ type Config struct {
 	HealthCheckRetries int
 	PortRetries        int
 	StartupBackoff     time.Duration
+	StartupTimeout     time.Duration // Maximum time to wait for cluster startup
+	KeepTempDir        bool          // If true, don't delete temp directory on teardown (for debugging)
 }
 
 // Cluster represents a running MongoDB test cluster
@@ -42,7 +45,7 @@ type Cluster struct {
 	tempDir       *tempdir.Manager
 	portAllocator *portmanager.Allocator
 	portRange     *portmanager.PortRange
-	launcher      *mlaunch.Launcher
+	launcher      mlaunch.LauncherInterface
 	healthChecker *healthcheck.Checker
 	mongosHosts   []string
 }
@@ -98,6 +101,65 @@ func NewCluster(config Config) (*Cluster, error) {
 // Start starts the cluster with retry logic
 func (c *Cluster) Start() error {
 	return c.StartWithRetry()
+}
+
+// StartWithPorts starts the cluster using specific ports
+func (c *Cluster) StartWithPorts(ports []int) error {
+	// Create context with timeout if StartupTimeout is set
+	ctx := context.Background()
+	if c.config.StartupTimeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(context.Background(), c.config.StartupTimeout)
+		defer cancel()
+	}
+
+	return c.startWithPortsContext(ctx, ports)
+}
+
+// startWithPortsContext starts the cluster using specific ports with a context
+func (c *Cluster) startWithPortsContext(ctx context.Context, ports []int) error {
+	if len(ports) == 0 {
+		return fmt.Errorf("no ports provided")
+	}
+
+	// Check if context is already cancelled
+	if err := ctx.Err(); err != nil {
+		return fmt.Errorf("startup cancelled: %w", err)
+	}
+
+	// Allocate the specific ports
+	portRange, err := c.portAllocator.AllocateSpecificPorts(ports)
+	if err != nil {
+		return fmt.Errorf("failed to allocate specific ports: %w", err)
+	}
+
+	c.portRange = portRange
+
+	// Start cluster
+	if err := c.startCluster(); err != nil {
+		c.cleanup()
+		return fmt.Errorf("cluster start failed: %w", err)
+	}
+
+	// Check context before health check
+	if err := ctx.Err(); err != nil {
+		c.Teardown()
+		return fmt.Errorf("startup timeout exceeded: %w", err)
+	}
+
+	// Health check with retries (with context awareness)
+	if err := c.waitForHealthyContext(ctx); err != nil {
+		c.Teardown()
+		return fmt.Errorf("health check failed: %w", err)
+	}
+
+	// Save metadata
+	if err := c.saveMetadata(); err != nil {
+		log.Printf("Warning: failed to save metadata: %v", err)
+	}
+
+	log.Println("Cluster started successfully!")
+	return nil
 }
 
 // StartWithRetry starts the cluster with automatic retry on failure
@@ -158,7 +220,7 @@ func (c *Cluster) StartWithRetry() error {
 // startCluster performs the actual cluster startup
 func (c *Cluster) startCluster() error {
 	// Ensure MongoDB version is installed
-	mongoMgr, err := mwrapper.NewManager()
+	mongoMgr, err := mongo_version_manager.NewManager()
 	if err != nil {
 		return fmt.Errorf("failed to initialize m manager: %w", err)
 	}
@@ -176,13 +238,7 @@ func (c *Cluster) startCluster() error {
 		}
 	}
 
-	// Get mlaunch path
-	installer := mlaunch.NewInstaller()
-	if err := installer.EnsureDependencies(); err != nil {
-		return fmt.Errorf("failed to ensure mlaunch: %w", err)
-	}
-
-	// Configure mlaunch
+	// Configure native mlaunch
 	launchConfig := mlaunch.Config{
 		DataDir:       c.tempDir.DataDir(),
 		Shards:        c.config.Shards,
@@ -194,17 +250,20 @@ func (c *Cluster) startCluster() error {
 		Username:      c.config.Username,
 		Password:      c.config.Password,
 		BinPath:       binPath,
+		MongoVersion:  c.config.MongoVersion,
 	}
 
-	c.launcher = mlaunch.NewLauncher(installer.GetMlaunchPath(), launchConfig)
+	// Use native Go implementation instead of Python mlaunch
+	nativeLauncher := mlaunch.NewNativeLauncher(launchConfig)
+	c.launcher = nativeLauncher
 
 	// Initialize cluster
-	if err := c.launcher.Init(); err != nil {
+	if err := nativeLauncher.Init(); err != nil {
 		return fmt.Errorf("failed to initialize cluster: %w", err)
 	}
 
 	// Get mongos hosts
-	c.mongosHosts = c.launcher.GetMongosHosts()
+	c.mongosHosts = nativeLauncher.GetMongosHosts()
 
 	return nil
 }
@@ -221,6 +280,23 @@ func (c *Cluster) waitForHealthy() error {
 	)
 
 	return c.healthChecker.WaitForHealthy()
+}
+
+// waitForHealthyContext performs health checks on the cluster with context awareness
+func (c *Cluster) waitForHealthyContext(ctx context.Context) error {
+	// Create a channel to signal when health check completes
+	done := make(chan error, 1)
+	go func() {
+		done <- c.waitForHealthy()
+	}()
+
+	// Wait for either health check to complete or context to be cancelled
+	select {
+	case err := <-done:
+		return err
+	case <-ctx.Done():
+		return fmt.Errorf("startup timeout exceeded during health check: %w", ctx.Err())
+	}
 }
 
 // saveMetadata saves cluster metadata to disk
@@ -265,9 +341,13 @@ func (c *Cluster) Teardown() error {
 		c.portAllocator.Release(c.portRange)
 	}
 
-	// Clean up temp directory
-	if err := c.tempDir.Cleanup(); err != nil {
-		return fmt.Errorf("failed to cleanup temp directory: %w", err)
+	// Clean up temp directory (unless KeepTempDir is set for debugging)
+	if !c.config.KeepTempDir {
+		if err := c.tempDir.Cleanup(); err != nil {
+			return fmt.Errorf("failed to cleanup temp directory: %w", err)
+		}
+	} else {
+		log.Printf("Keeping temp directory for debugging: %s", c.tempDir.BaseDir())
 	}
 
 	log.Println("Cluster teardown complete")
@@ -295,6 +375,22 @@ func (c *Cluster) DataDir() string {
 // LogDir returns the logs directory path
 func (c *Cluster) LogDir() string {
 	return c.tempDir.LogDir()
+}
+
+// Ports returns the allocated ports for the cluster
+func (c *Cluster) Ports() []int {
+	if c.portRange == nil {
+		return nil
+	}
+	return c.portRange.Ports
+}
+
+// BasePort returns the base port for the cluster
+func (c *Cluster) BasePort() int {
+	if c.portRange == nil {
+		return 0
+	}
+	return c.portRange.Base
 }
 
 // retryBackoff calculates exponential backoff duration

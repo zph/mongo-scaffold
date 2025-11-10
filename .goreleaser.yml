@@ -1,0 +1,179 @@
+# Goreleaser configuration for mongo-scaffold
+# Builds and releases m and mlaunch binaries
+
+project_name: mongo-scaffold
+
+version: 2
+# Build configuration
+builds:
+  - id: m
+    main: ./cmd/m
+    binary: m
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+
+  - id: mlaunch
+    main: ./cmd/mlaunch
+    binary: mlaunch
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+
+# Archive configuration
+archives:
+  - id: default
+    name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}"
+    format_overrides:
+      - goos: windows
+        format: zip
+    files:
+      - README.md
+      - LICENSE*
+      - CHANGELOG*
+    builds:
+      - m
+      - mlaunch
+
+# Checksums
+checksum:
+  name_template: "{{ .ProjectName }}_{{ .Version }}_checksums.txt"
+  algorithm: sha256
+
+# Snapshots
+snapshot:
+  name_template: "{{ .Tag }}-next"
+
+# Changelog
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+
+# Homebrew Cask configuration
+# Note: For command-line tools, Homebrew formulas (brews) are more typical,
+# but casks work fine too. If you prefer a formula, uncomment the 'brews' section below.
+casks:
+  - name: mongo-scaffold
+    tap:
+      owner: zph
+      name: homebrew-tap
+    homepage: "https://github.com/zph/mongo-scaffold"
+    description: "MongoDB version manager and cluster launcher"
+    license: "MIT"
+    # Cask will be created in the tap repository
+    # The binaries will be packaged in a .tar.gz archive
+    # Format: mongo-scaffold_<version>_<os>_<arch>.tar.gz
+    folder: Casks
+    # Install both binaries
+    binaries:
+      - m
+      - mlaunch
+    # Dependencies (if any)
+    # depends_on:
+    #   - cask: "mongodb-community"
+    # Test block for homebrew cask
+    test: |
+      system "#{bin}/m", "--version"
+      system "#{bin}/mlaunch", "--help"
+
+# Homebrew Formula configuration (alternative - uncomment if you prefer formula over cask)
+# brews:
+#   - name: mongo-scaffold
+#     tap:
+#       owner: zph
+#       name: homebrew-tap
+#     homepage: "https://github.com/zph/mongo-scaffold"
+#     description: "MongoDB version manager and cluster launcher"
+#     license: "MIT"
+#     folder: Formula
+#     binaries:
+#       - m
+#       - mlaunch
+#     test: |
+#       system "#{bin}/m", "--version"
+#       system "#{bin}/mlaunch", "--help"
+
+# GitHub release configuration
+release:
+  github:
+    owner: zph
+    name: mongo-scaffold
+  # Draft releases
+  draft: false
+  # Prerelease for tags with -alpha, -beta, -rc
+  mode: replace
+  header: |
+    ## {{ .Tag }}
+
+    {{ if .PreviousTag }}
+    **Full Changelog**: https://github.com/zph/mongo-scaffold/compare/{{ .PreviousTag }}...{{ .Tag }}
+    {{ end }}
+
+# Docker (optional - can be removed if not needed)
+# dockers:
+#   - goos: linux
+#     goarch: amd64
+#     image_templates:
+#       - "ghcr.io/zph/mongo-scaffold:{{ .Tag }}"
+#       - "ghcr.io/zph/mongo-scaffold:latest"
+#     dockerfile: Dockerfile
+
+# NFPM (for .deb and .rpm packages - optional)
+# nfpms:
+#   - id: default
+#     package_name: mongo-scaffold
+#     file_name_template: "{{ .ConventionalFileName }}"
+#     maintainer: "zph <zph@example.com>"
+#     description: "MongoDB version manager and cluster launcher"
+#     license: "MIT"
+#     formats:
+#       - deb
+#       - rpm
+#     dependencies:
+#       - mongodb-community
+#     contents:
+#       - src: "{{ .ArtifactPath }}"
+#         dst: "/usr/local/bin/{{ .Binary }}"
+#         file_info:
+#           mode: 0755
+
+# Before hook (optional)
+# before:
+#   hooks:
+#     - go mod download
+#     - go generate ./...
+
+# After hook (optional)
+# after:
+#   hooks:
+#     - echo "Release {{ .Tag }} completed!"
+

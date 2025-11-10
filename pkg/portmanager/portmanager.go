@@ -135,6 +135,81 @@ func isPortAvailable(port int) bool {
 	return false
 }
 
+// AllocateSpecificPorts allocates a specific set of ports
+func (a *Allocator) AllocateSpecificPorts(ports []int) (*PortRange, error) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	if len(ports) == 0 {
+		return nil, fmt.Errorf("no ports specified")
+	}
+
+	// Verify all ports are available on the system
+	for _, port := range ports {
+		if !isPortAvailable(port) {
+			return nil, fmt.Errorf("port %d is not available", port)
+		}
+		if a.allocated[port] {
+			return nil, fmt.Errorf("port %d is already allocated", port)
+		}
+	}
+
+	// Mark ports as allocated
+	for _, port := range ports {
+		a.allocated[port] = true
+	}
+
+	// Find base port (minimum port in the range)
+	base := ports[0]
+	for _, port := range ports {
+		if port < base {
+			base = port
+		}
+	}
+
+	return &PortRange{
+		Base:  base,
+		Count: len(ports),
+		Ports: ports,
+	}, nil
+}
+
+// FindSequentialAvailablePorts finds a sequential range of available ports by querying the system
+func FindSequentialAvailablePorts(count int, startPort, endPort int) ([]int, error) {
+	if startPort == 0 {
+		startPort = 30000
+	}
+	if endPort == 0 {
+		endPort = 40000
+	}
+
+	if startPort+count > endPort {
+		return nil, fmt.Errorf("not enough ports in range %d-%d for %d sequential ports", startPort, endPort, count)
+	}
+
+	// Try to find sequential available ports
+	for base := startPort; base+count <= endPort; base++ {
+		ports := make([]int, count)
+		allAvailable := true
+
+		// Check if all ports in this range are available
+		for i := 0; i < count; i++ {
+			port := base + i
+			ports[i] = port
+			if !isPortAvailable(port) {
+				allAvailable = false
+				break
+			}
+		}
+
+		if allAvailable {
+			return ports, nil
+		}
+	}
+
+	return nil, fmt.Errorf("no sequential range of %d available ports found in range %d-%d", count, startPort, endPort)
+}
+
 // CalculatePortsNeeded calculates total ports required for a cluster
 func CalculatePortsNeeded(shards, replicaNodes, configServers, mongosCount int) int {
 	// Each shard has replicaNodes mongod instances
