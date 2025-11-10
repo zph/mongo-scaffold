@@ -107,6 +107,10 @@ homebrew_casks:
     url:
       verified: github.com/zph/mongo-scaffold
     # ids field not needed - using single default archive that contains all builds
+    binaries:
+      - m
+      - mlaunch
+      - mongo-cluster
     hooks:
       post:
         install: |
