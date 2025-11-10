@@ -46,6 +46,26 @@ builds:
       - -X main.commit={{.Commit}}
       - -X main.date={{.Date}}
 
+  - id: mongo-cluster
+    main: ./cmd/mongo-cluster
+    binary: mongo-cluster
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+
 # Archive configuration
 archives:
   - id: default
@@ -60,6 +80,7 @@ archives:
     builds:
       - m
       - mlaunch
+      - mongo-cluster
 
 # Checksums
 checksum:
@@ -79,7 +100,6 @@ changelog:
       - "^test:"
 
 # Homebrew configuration
-# Note: For command-line tools, Homebrew formulas are more typical than casks
 homebrew:
   - name: mongo-scaffold
     tap:
