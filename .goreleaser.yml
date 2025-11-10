@@ -98,6 +98,9 @@ changelog:
 # Note: GoReleaser 2.5.0 uses 'brews' field for Homebrew formulas
 brews:
   - name: mongo-scaffold
+    repository:
+      owner: zph
+      name: mongo-scaffold
     homepage: "https://github.com/zph/mongo-scaffold"
     description: "MongoDB version manager and cluster launcher"
     license: "MIT"

@@ -75,3 +75,23 @@ release: ## Commit VERSION file, create git tag, confirm, and push
 	git push origin "v$$VERSION"; \
 	echo ""; \
 	echo "Release v$$VERSION pushed successfully!"
+
+test-release: ## Test GoReleaser locally (snapshot build)
+	@goreleaser release --snapshot --clean
+
+install-local: ## Install Homebrew formula from local dist directory (creates local tap)
+	@if [ ! -f dist/homebrew/mongo-scaffold.rb ]; then \
+		echo "Formula not found. Run 'make test-release' first to generate it."; \
+		exit 1; \
+	fi
+	@echo "Creating local tap and installing formula..."
+	@TAP_NAME="zph/local"; \
+	TAP_DIR=$$(brew --repository)/$$TAP_NAME; \
+	if [ ! -d $$TAP_DIR ]; then \
+		echo "Creating local tap: $$TAP_NAME"; \
+		mkdir -p $$TAP_DIR/Formula; \
+		brew tap $$TAP_NAME 2>/dev/null || true; \
+	fi; \
+	cp dist/homebrew/mongo-scaffold.rb $$TAP_DIR/Formula/; \
+	echo "Installing mongo-scaffold from local tap..."; \
+	brew install mongo-scaffold
