@@ -78,49 +78,25 @@ changelog:
       - "^docs:"
       - "^test:"
 
-# Homebrew Cask configuration
-# Note: For command-line tools, Homebrew formulas (brews) are more typical,
-# but casks work fine too. If you prefer a formula, uncomment the 'brews' section below.
-casks:
+# Homebrew configuration
+# Note: For command-line tools, Homebrew formulas are more typical than casks
+homebrew:
   - name: mongo-scaffold
     tap:
       owner: zph
-      name: homebrew-tap
+      name: mongo-scaffold
     homepage: "https://github.com/zph/mongo-scaffold"
     description: "MongoDB version manager and cluster launcher"
     license: "MIT"
-    # Cask will be created in the tap repository
-    # The binaries will be packaged in a .tar.gz archive
-    # Format: mongo-scaffold_<version>_<os>_<arch>.tar.gz
-    folder: Casks
-    # Install both binaries
     binaries:
       - m
       - mlaunch
-    # Dependencies (if any)
-    # depends_on:
-    #   - cask: "mongodb-community"
-    # Test block for homebrew cask
+      - mongo-cluster
+    # Test block for homebrew formula
     test: |
       system "#{bin}/m", "--version"
       system "#{bin}/mlaunch", "--help"
-
-# Homebrew Formula configuration (alternative - uncomment if you prefer formula over cask)
-# brews:
-#   - name: mongo-scaffold
-#     tap:
-#       owner: zph
-#       name: homebrew-tap
-#     homepage: "https://github.com/zph/mongo-scaffold"
-#     description: "MongoDB version manager and cluster launcher"
-#     license: "MIT"
-#     folder: Formula
-#     binaries:
-#       - m
-#       - mlaunch
-#     test: |
-#       system "#{bin}/m", "--version"
-#       system "#{bin}/mlaunch", "--help"
+      system "#{bin}/mongo-cluster", "--help"
 
 # GitHub release configuration
 release:
