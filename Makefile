@@ -42,3 +42,36 @@ test-integration: ## Run all tests including integration tests
 
 connect: ## Connect to MongoDB cluster
 	@mongo keyhole
+
+release: ## Commit VERSION file, create git tag, confirm, and push
+	@if [ -z "$$(git status --porcelain VERSION)" ]; then \
+		echo "No changes to VERSION file"; \
+		exit 1; \
+	fi
+	@VERSION=$$(cat VERSION); \
+	BRANCH=$$(git branch --show-current); \
+	echo "Current VERSION: $$VERSION"; \
+	echo "Current branch: $$BRANCH"; \
+	echo ""; \
+	echo "This will:"; \
+	echo "  1. Commit changes to VERSION file"; \
+	echo "  2. Create git tag v$$VERSION"; \
+	echo "  3. Push commit to origin $$BRANCH"; \
+	echo "  4. Push tag v$$VERSION to origin"; \
+	echo ""; \
+	printf "Continue? [y/N] "; \
+	read REPLY; \
+	if [ "$$REPLY" != "y" ] && [ "$$REPLY" != "Y" ]; then \
+		echo "Aborted."; \
+		exit 1; \
+	fi; \
+	git add VERSION; \
+	git commit -m "Bump version to $$VERSION"; \
+	git tag -a "v$$VERSION" -m "Release v$$VERSION"; \
+	echo ""; \
+	echo "Created tag v$$VERSION"; \
+	echo "Pushing to remote..."; \
+	git push origin $$BRANCH; \
+	git push origin "v$$VERSION"; \
+	echo ""; \
+	echo "Release v$$VERSION pushed successfully!"
