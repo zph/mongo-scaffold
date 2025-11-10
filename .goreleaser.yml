@@ -82,8 +82,9 @@ checksum:
   algorithm: sha256
 
 # Snapshots
-snapshot:
-  name_template: "{{ .Tag }}-next"
+# Note: snapshot.name_template is deprecated in GoReleaser 2.5.0
+# Removed to avoid deprecation warnings
+snapshot: {}
 
 # Changelog
 changelog:
@@ -94,19 +95,17 @@ changelog:
       - "^test:"
 
 # Homebrew configuration
-homebrew:
+# Note: GoReleaser 2.5.0 uses 'brews' field for Homebrew formulas
+brews:
   - name: mongo-scaffold
-    tap:
-      owner: zph
-      name: mongo-scaffold
     homepage: "https://github.com/zph/mongo-scaffold"
     description: "MongoDB version manager and cluster launcher"
     license: "MIT"
-    binaries:
-      - m
-      - mlaunch
-      - mongo-cluster
-    # Test block for homebrew formula
+    # Install all binaries manually since 'binaries' field is not supported in 2.5.0
+    install: |
+      bin.install "m"
+      bin.install "mlaunch"
+      bin.install "mongo-cluster"
     test: |
       system "#{bin}/m", "--version"
       system "#{bin}/mlaunch", "--help"
