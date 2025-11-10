@@ -71,10 +71,7 @@ archives:
       - README.md
       - LICENSE*
       - CHANGELOG*
-    builds:
-      - m
-      - mlaunch
-      - mongo-cluster
+    # builds field is deprecated - archives now include all builds by default
 
 # Checksums
 checksum:
@@ -94,25 +91,33 @@ changelog:
       - "^docs:"
       - "^test:"
 
-# Homebrew configuration
-# Note: GoReleaser 2.5.0 uses 'brews' field for Homebrew formulas
-brews:
+# Homebrew Casks configuration
+homebrew_casks:
   - name: mongo-scaffold
     repository:
       owner: zph
       name: mongo-scaffold
+    commit_author:
+      name: goreleaserbot
+      email: bot@goreleaser.com
+    directory: Casks
     homepage: "https://github.com/zph/mongo-scaffold"
     description: "MongoDB version manager and cluster launcher"
     license: "MIT"
-    # Install all binaries manually since 'binaries' field is not supported in 2.5.0
-    install: |
-      bin.install "m"
-      bin.install "mlaunch"
-      bin.install "mongo-cluster"
-    test: |
-      system "#{bin}/m", "--version"
-      system "#{bin}/mlaunch", "--help"
-      system "#{bin}/mongo-cluster", "--help"
+    url:
+      verified: github.com/zph/mongo-scaffold
+    ids:
+      - m
+      - mlaunch
+      - mongo-cluster
+    hooks:
+      post:
+        install: |
+          if OS.mac?
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/m"]
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/mlaunch"]
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/mongo-cluster"]
+          end
 
 # GitHub release configuration
 release:
