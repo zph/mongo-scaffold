@@ -3,7 +3,7 @@ cask "mongo-scaffold" do
   name "mongo-scaffold"
   desc "MongoDB version manager and cluster launcher"
   homepage "https://github.com/zph/mongo-scaffold"
-  version "0.9.7"
+  version "0.9.8"
 
   livecheck do
     skip "Auto-generated on release."
@@ -17,12 +17,12 @@ cask "mongo-scaffold" do
     on_intel do
       url "https://github.com/zph/mongo-scaffold/releases/download/v#{version}/mongo-scaffold_darwin_amd64.tar.gz",
         verified: "github.com/zph/mongo-scaffold"
-      sha256 "02cc7c5603a08d905f0f9fcd68892845807480387ab70bf92018fa8e99d12544"
+      sha256 "bfc00fa6be5bb503faa43a10d3540d90fb7bc80dcc99d4b8edf24b054e7ccc89"
     end
     on_arm do
       url "https://github.com/zph/mongo-scaffold/releases/download/v#{version}/mongo-scaffold_darwin_arm64.tar.gz",
         verified: "github.com/zph/mongo-scaffold"
-      sha256 "98894d49b4e11d4ab044d7c48a2f185cd6c38f4076a43c760238f63386eda19b"
+      sha256 "02ecbdb511a07f3439ccd4b9205a1de4ac6dda1a8c722552753d22b713a740b1"
     end
   end
 
@@ -30,12 +30,12 @@ cask "mongo-scaffold" do
     on_intel do
       url "https://github.com/zph/mongo-scaffold/releases/download/v#{version}/mongo-scaffold_linux_amd64.tar.gz",
         verified: "github.com/zph/mongo-scaffold"
-      sha256 "b4f668fda41d169b1219cc8ba5b244cfcb70ccca079e0f899c2df1e02dbc96fd"
+      sha256 "f46983f6a49690627bfe9a671782e30d2b9d0871b8d6de9faf6c92e224d64c39"
     end
     on_arm do
       url "https://github.com/zph/mongo-scaffold/releases/download/v#{version}/mongo-scaffold_linux_arm64.tar.gz",
         verified: "github.com/zph/mongo-scaffold"
-      sha256 "c32649605532c9bfdcf6cc57a7698abd6010d489df22800d06a61e6709c7de5a"
+      sha256 "b8ae25a1968a1e96433393e83b33e29c015f01ac6ebe39c7501be0deec620d66"
     end
   end
 
