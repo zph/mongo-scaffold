@@ -617,10 +617,10 @@ func (l *NativeLauncher) startMongod(port int, dataDir, logFile, procType, replS
 			args = append(args, "--replSet", replSetName)
 		}
 	} else if procType == "shard" {
-		// Shard servers need --shardsvr flag (required in MongoDB 4.4+)
-		// Check version and add flag only for MongoDB 4.4 and above
+		// Shard servers need --shardsvr flag (required in MongoDB 3.4+)
+		// Check version and add flag only for MongoDB 3.4 and above
 		if l.config.MongoVersion != "" {
-			// Normalize version for semver comparison (e.g., "4.4" -> "v4.4.0")
+			// Normalize version for semver comparison (e.g., "3.4" -> "v3.4.0")
 			version := l.config.MongoVersion
 			if !strings.HasPrefix(version, "v") {
 				version = "v" + version
@@ -630,12 +630,12 @@ func (l *NativeLauncher) startMongod(port int, dataDir, logFile, procType, replS
 			if len(parts) == 2 {
 				version = "v" + strings.Join(parts, ".") + ".0"
 			}
-			// Compare with v4.4.0
-			if semver.Compare(version, "v4.4.0") >= 0 {
+			// Compare with v3.4.0
+			if semver.Compare(version, "v3.4.0") >= 0 {
 				args = append(args, "--shardsvr")
 			}
 		} else {
-			// If version not specified, assume 4.4+ and add flag (safer default)
+			// If version not specified, assume 3.4+ and add flag (safer default)
 			args = append(args, "--shardsvr")
 		}
 		if replSetName != "" {
